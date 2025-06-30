@@ -9,10 +9,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -DDEBUG -fexceptions")
 # Release build settings
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -Wall -pedantic -fPIC ")
+# Memory profiling build settings - optimized but with memory tracking capabilities
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O2 -g -Wall -pedantic -fPIC -fno-omit-frame-pointer -DENABLE_MEMORY_TRACKING")
 
 # Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
 set(Python3_EXECUTABLE /usr/bin/python3.12) #TODO: set up the python3 executable path

@@ -227,7 +227,7 @@ std::tuple<bool, size_t, float> diff_Nexullance_IT::optimize_for_M_R_fixed_step(
             int j = item.second;
             #ifdef DEBUG
             assert(link_load[i][j] == max_load && "link load should be max load");
-            #endif;
+            #endif
             std::vector<path_id> path_ids = link_path_ids[i][j];
 
             std::multimap<float, path_id, std::greater<float>> sorted_path_ids;

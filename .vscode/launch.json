@@ -2,12 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "(gdb) Launch python",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/users/ziyzhang/miniconda3/envs/gt/bin/python3.12",
+            "program": "/usr/bin/python3.12",
             "args": [
-                "/users/ziyzhang/topology-research/nexullance/IT_boost/debug_IT.py"
+                "${workspaceFolder}/profiling/profile_IT_fast_init.py"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

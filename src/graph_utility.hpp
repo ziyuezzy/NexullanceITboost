@@ -22,4 +22,9 @@ void compute_all_shortest_paths_single_source(const Graph &G, Vertex s, std::vec
 void compute_all_shortest_paths_single_s_d(const Graph &G, Vertex s, Vertex d, std::vector<std::vector<Vertex>> &all_paths,
                                 const boost::property_map<Graph, boost::edge_weight_t>::type &weightmap);
 
+// Find all paths with max length for all source-destination pairs in the graph
+// TODO: validate against networkx
+void compute_all_paths_with_max_length_all_s_d(const Graph &G, size_t max_length, 
+                                             std::vector<std::vector<std::vector<std::vector<Vertex>>>> &all_paths_matrix);
+
 #endif

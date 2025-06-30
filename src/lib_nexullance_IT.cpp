@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <pybind11/pybind11.h>
+#include <iostream>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
@@ -115,27 +116,6 @@ std::vector<IT_outputs> diff_Nexullance_IT_interface::run_for_batch_matrices(std
         results.push_back( this->add_next_matrix(M_EPs_s[m]) );
     assert(results.size() == _M && "results size should be equal to the number of matrices");
     return results;
-
-    // int _M = M_EPs_s.size();
-    // int num_EPs = _V*EPR;
-    // // converting the Eigen matrix to a float** matrix
-    // std::vector<float**> M_EP_matrices;
-    // for (int m = 0; m < _M; m++) {
-    //     M_EP_matrices.push_back(new float*[num_EPs]); // TODO: delete the new float**
-    //     for (int j = 0; j < num_EPs; j++) {
-    //         M_EP_matrices[m][j] = new float[num_EPs]; // TODO: delete the new float**
-    //     }
-    // }
-    // for (int m = 0; m < _M; m++) {
-    //     assert(M_EPs_s[m].rows() == num_EPs && M_EPs_s[m].cols() == num_EPs);
-    //     for (int i = 0; i < num_EPs; ++i)
-    //         for (int j = 0; j < num_EPs; ++j)
-    //             M_EP_matrices[m][i][j] = M_EPs_s[m](i, j);
-    // }
-    // //===========
-    // diff_nexu_it = new diff_Nexullance_IT(G, EPR, _Cap_core, _Cap_access, _debug, _online_mode);
-    // diff_nexu_it->run_for_M_EPs_s(M_EP_matrices, _alpha, _beta, _stepping_threshold, _min_step, _min_attempts, _max_attempts);
-
 }
 
 void diff_Nexullance_IT_interface::_initialize(const int EPR){
@@ -160,6 +140,50 @@ IT_outputs diff_Nexullance_IT_interface::add_next_matrix(Eigen::MatrixXf M_EPs){
     return result;
 }
 
+// ==================================================
+// ============Nexullance_IT_fast_interface==========
+
+Nexullance_IT_fast_interface::Nexullance_IT_fast_interface(int V, Eigen::MatrixX2i arcs, 
+    const float Cap_core,const float Cap_access, bool debug): 
+    _V(V), _Cap_core(Cap_core), _Cap_access(Cap_access), _debug(debug), nexu_it_fast(nullptr) {
+
+    G = read_graph_from_arcs(V, arcs, false);
+    int num_routers=boost::num_vertices(G);
+    assert(_V == num_routers);
+}
+
+Nexullance_IT_fast_interface::~Nexullance_IT_fast_interface(){
+    if (nexu_it_fast)   delete nexu_it_fast;
+}
+
+result_routing_table Nexullance_IT_fast_interface::get_routing_table(){
+    return nexu_it_fast->get_routing_table();
+}
+
+void Nexullance_IT_fast_interface::_initialize(size_t max_path_length, size_t initial_weight_max_path_length){
+    // num_EPs = _V*EPR;
+    nexu_it_fast = new Nexullance_IT_fast(G, _Cap_core, _Cap_access, _debug);
+    nexu_it_fast->initialization(max_path_length, initial_weight_max_path_length);
+}
+
+std::pair<double, size_t> Nexullance_IT_fast_interface::profile_initialization(
+    size_t max_path_length, size_t initial_weight_max_path_length){
+
+    if (nexu_it_fast)   delete nexu_it_fast;
+    // Force memory cleanup and get baseline
+    
+    // Record time
+    auto start = std::chrono::high_resolution_clock::now();
+    nexu_it_fast = new Nexullance_IT_fast(G, _Cap_core, _Cap_access, _debug);
+    nexu_it_fast->initialization(max_path_length, initial_weight_max_path_length);
+    auto end = std::chrono::high_resolution_clock::now();
+    
+    std::chrono::duration<double> elapsed = end - start;
+    
+    // Return time in seconds and memory usage in bytes
+    return std::make_pair(elapsed.count(), nexu_it_fast->get_RAM_after_init());
+}
+
 namespace py = pybind11;
 constexpr auto byref = py::return_value_policy::reference_internal;
 
@@ -181,6 +205,13 @@ PYBIND11_MODULE(Nexullance_IT_cpp, m) {
     .def("run_for_batch_matrices", &diff_Nexullance_IT_interface::run_for_batch_matrices)
     .def("_initialize", &diff_Nexullance_IT_interface::_initialize)
     .def("add_next_matrix", &diff_Nexullance_IT_interface::add_next_matrix)
+    ;
+
+    py::class_<Nexullance_IT_fast_interface>(m, "Nexullance_IT_fast_interface")
+    .def(py::init<int, Eigen::MatrixX2i, const float, const float, bool>(), py::arg("V"), py::arg("arcs"), py::arg("Cap_core") = 10, py::arg("Cap_access") = 10, py::arg("debug") = false)
+    .def("_initialize", &Nexullance_IT_fast_interface::_initialize, py::arg("max_path_length") = 4, py::arg("initial_weight_max_path_length") = 0)
+    .def("profile_initialization", &Nexullance_IT_fast_interface::profile_initialization, py::arg("max_path_length") = 4, py::arg("initial_weight_max_path_length") = 0)
+    .def("get_routing_table", &Nexullance_IT_fast_interface::get_routing_table)
     ;
 
     py::class_<IT_outputs>(m, "IT_outputs")

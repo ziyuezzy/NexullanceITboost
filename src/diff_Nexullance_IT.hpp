@@ -21,7 +21,7 @@ class diff_Nexullance_IT{
         // and optimize the routing table accordingly.
 
         IT_outputs optimize_for_M_EPs(float** M_EPs, float _alpha, float _beta, float threshold, 
-            size_t max_num_step2, int min_attempts, int max_attempts);
+            size_t max_num_step, int min_attempts, int max_attempts);
 
         // return <bool continue or not, num_attempts, max_core_load>
         std::tuple<bool, size_t, float> optimize_for_M_R_fixed_step(float** M_R, float _alpha, 
@@ -51,7 +51,7 @@ class diff_Nexullance_IT{
         property_map< Graph, edge_weight_t >::type weightmap;
         path_id next_path_id;
         std::unordered_map<path_id, std::vector<Vertex>> path_id_to_path; // using vector here, because the shortest-path algorithm return vector<Vertex> as a path
-        std::unordered_map<path_id, float>** routing_table; // a 2D-array of map, first index corresponds to source router id, second index the destination router id.
+        std::unordered_map<path_id, float>** routing_table; // a 2D-array of map, first index corresponds to source switch id, second index the destination switch id.
 
         std::list<std::unordered_map<path_id, float>**> routing_tables_bin;
 
@@ -87,6 +87,7 @@ class diff_Nexullance_IT{
         // }
 
         float** link_load;
+        // a mapping from link to path_ids
         std::vector<path_id>** link_path_ids;
 
         std::vector<IT_outputs> IT_outputs_list;
