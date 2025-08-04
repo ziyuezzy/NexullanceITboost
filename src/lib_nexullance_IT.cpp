@@ -1,10 +1,10 @@
-#include "lib_nexullance_IT.hpp"
-
 #include <chrono>
-#include <pybind11/pybind11.h>
 #include <iostream>
+#include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
+
+#include "lib_nexullance_IT.hpp"
 
 // ===========class Nexullance_IT_interface==========
 // The interface object corresponds to a graph, so it can run (or profile) IT or MD_IT for different input demand matrices
@@ -156,14 +156,19 @@ Nexullance_IT_fast_interface::~Nexullance_IT_fast_interface(){
     if (nexu_it_fast)   delete nexu_it_fast;
 }
 
-result_routing_table Nexullance_IT_fast_interface::get_routing_table(){
-    return nexu_it_fast->get_routing_table();
+result_routing_table Nexullance_IT_fast_interface::get_initial_routing_table(){
+    return nexu_it_fast->get_initial_routing_table();
 }
 
-void Nexullance_IT_fast_interface::_initialize(size_t max_path_length, size_t initial_weight_max_path_length){
+result_routing_table Nexullance_IT_fast_interface::get_previous_result_routing_table(){
+    return nexu_it_fast->get_previous_result_routing_table();
+}
+
+void Nexullance_IT_fast_interface::_initialize(size_t max_path_length, size_t initial_weight_max_path_length, 
+                                              bool disjoint_paths) {
     // num_EPs = _V*EPR;
     nexu_it_fast = new Nexullance_IT_fast(G, _Cap_core, _Cap_access, _debug);
-    nexu_it_fast->initialization(max_path_length, initial_weight_max_path_length);
+    nexu_it_fast->initialization(max_path_length, initial_weight_max_path_length, disjoint_paths);
 }
 
 std::pair<double, size_t> Nexullance_IT_fast_interface::profile_initialization(
@@ -182,6 +187,41 @@ std::pair<double, size_t> Nexullance_IT_fast_interface::profile_initialization(
     
     // Return time in seconds and memory usage in bytes
     return std::make_pair(elapsed.count(), nexu_it_fast->get_RAM_after_init());
+}
+
+IT_outputs Nexullance_IT_fast_interface::add_next_matrix(Eigen::MatrixXf M_EPs, size_t max_num_fix_step, bool from_initial_RT){
+    // converting the Eigen matrix to a float** matrix, assert that the size is correct
+    int num_EPs = M_EPs.rows();
+    assert(M_EPs.cols() == num_EPs);
+    size_t EPR = num_EPs / _V; // number of end points per router
+
+    float** matrix = new float*[num_EPs];
+    for (int i = 0; i < num_EPs; i++){
+        matrix[i] = new float[num_EPs];
+        for (int j = 0; j < num_EPs; ++j)
+            matrix[i][j] = M_EPs(i, j);
+    }
+    //===========
+
+    IT_outputs result = nexu_it_fast->optimize_for_M_EPs(matrix, EPR, max_num_fix_step, from_initial_RT);
+    
+    // delete the float** matrix
+    for (int i = 0; i < num_EPs; i++)
+        delete[] matrix[i];
+    delete[] matrix;
+
+    return result;
+}
+
+std::vector<IT_outputs> Nexullance_IT_fast_interface::run_for_batch_matrices(std::vector<Eigen::MatrixXf> M_EPs_s, bool from_initial_RT){
+    assert(nexu_it_fast != nullptr && "Nexullance_IT_fast_interface is not initialized. Call _initialize() first.");
+    std::vector<IT_outputs> results;
+    results.clear();
+    for (const auto& M_EPs : M_EPs_s) {
+        results.push_back(this->add_next_matrix(M_EPs, 5, from_initial_RT));
+    }
+    assert(results.size() == M_EPs_s.size() && "results size should be equal to the number of matrices");
+    return results;
 }
 
 namespace py = pybind11;
@@ -209,9 +249,13 @@ PYBIND11_MODULE(Nexullance_IT_cpp, m) {
 
     py::class_<Nexullance_IT_fast_interface>(m, "Nexullance_IT_fast_interface")
     .def(py::init<int, Eigen::MatrixX2i, const float, const float, bool>(), py::arg("V"), py::arg("arcs"), py::arg("Cap_core") = 10, py::arg("Cap_access") = 10, py::arg("debug") = false)
-    .def("_initialize", &Nexullance_IT_fast_interface::_initialize, py::arg("max_path_length") = 4, py::arg("initial_weight_max_path_length") = 0)
+    .def("_initialize", &Nexullance_IT_fast_interface::_initialize, py::arg("max_path_length") = 4, py::arg("initial_weight_max_path_length") = 0, py::arg("disjoint_paths") = false)
     .def("profile_initialization", &Nexullance_IT_fast_interface::profile_initialization, py::arg("max_path_length") = 4, py::arg("initial_weight_max_path_length") = 0)
-    .def("get_routing_table", &Nexullance_IT_fast_interface::get_routing_table)
+    .def("get_init_routing_table", &Nexullance_IT_fast_interface::get_initial_routing_table)
+    .def("get_prev_result_routing_table", &Nexullance_IT_fast_interface::get_previous_result_routing_table)
+    .def("set_parameters", &Nexullance_IT_fast_interface::set_parameters)
+    .def("add_next_matrix", &Nexullance_IT_fast_interface::add_next_matrix, py::arg("M_EPs"), py::arg("max_num_fix_step") = 5, py::arg("from_initial_RT") = true)
+    .def("run_for_batch_matrices", &Nexullance_IT_fast_interface::run_for_batch_matrices, py::arg("M_EPs_s"), py::arg("from_initial_RT"))
     ;
 
     py::class_<IT_outputs>(m, "IT_outputs")

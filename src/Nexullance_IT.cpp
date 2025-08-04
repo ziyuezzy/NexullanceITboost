@@ -17,7 +17,7 @@ Nexullance_IT::Nexullance_IT(Graph& _input_graph, const float** _M_EPs,
     num_edges = boost::num_edges(G);
     num_vertices = boost::num_vertices(G);
 
-    std::pair<float, float> temp_result=procress_M_EPs(_M_EPs, num_vertices, EPR, &M_R);
+    std::pair<float, float> temp_result=process_M_EPs(_M_EPs, num_vertices, EPR, &M_R);
     // Calculate the max_access_link_load for later usage
     float maxEPflow = temp_result.first;
     total_flow = temp_result.second;
@@ -182,6 +182,7 @@ bool Nexullance_IT::step_2(float _alpha, float _beta, float step, float threshol
             if (verbose){
                 std::cout<<"max core link load reaches max access link load, terminating "<<std::endl;
             }
+            num_attempts_step_2 += attempts;
             return false;
         }
 
@@ -189,13 +190,16 @@ bool Nexullance_IT::step_2(float _alpha, float _beta, float step, float threshol
             std::cout<<"step2, " << "step_value= "<< step << ", it= " << attempts << ", max_load = " << max_load << ",estimated phi = " 
                 << total_flow/std::max(max_access_load, result_max_load_step_2)/(num_vertices*EPR)<< std::endl;   
 
-        if((attempts > min_attempts) && (( std::accumulate(std::prev(max_loads_hist.end(), min_attempts/2), max_loads_hist.end(), 0.0f)/((float)min_attempts) - max_load)<threshold)){
-            if (verbose){
-                std::cout<<"step 2: low progress, terminating for step = "<< step <<std::endl;
-                std::cout<<"step 2: found max link load" << max_load <<std::endl;
+        if(attempts > min_attempts){
+            float recent_average_load = std::accumulate(std::prev(max_loads_hist.end(), min_attempts/2), max_loads_hist.end(), 0.0f)/((float)(min_attempts/2));
+            if  ((recent_average_load - max_load)<threshold){
+                if (verbose){
+                    std::cout<<"step 2: low progress, terminating for step = "<< step <<std::endl;
+                    std::cout<<"step 2: found max link load" << max_load <<std::endl;
+                }
+                num_attempts_step_2 += attempts;
+                return true;
             }
-            num_attempts_step_2 += attempts;
-            return true;
         }
         bool success_attempt = false;
 
@@ -215,6 +219,12 @@ bool Nexullance_IT::step_2(float _alpha, float _beta, float step, float threshol
                 int dst = old_path.back();
                 float contribution = routing_table[src][dst][old_path_id]*M_R[src][dst]/Cap_core;
                 sorted_path_ids.insert(std::make_pair(contribution, old_path_id));
+            }
+
+
+            if (verbose) {
+                std::cout << "Max load edge: (" << i << ", " << j << "), "
+                          << "number of paths through this edge: " << sorted_path_ids.size() << std::endl;
             }
 
             for (auto item: sorted_path_ids) {
@@ -389,7 +399,7 @@ bool Nexullance_IT::step_2(float _alpha, float _beta, float step, float threshol
 }
 
 void Nexullance_IT::optimize(int num_step_1, float alpha_step_1, float beta_step_1, int max_num_step_2, 
-        float alpha_step_2, float beta_step_2, int step_2_min_attempts, int step_2_stepping_threshold, int step_2_max_attemtps){
+        float alpha_step_2, float beta_step_2, int step_2_min_attempts, float step_2_stepping_threshold, int step_2_max_attempts){
     
     assert(num_step_1 >= 1 and "num_step_1 should be a positive integer greater than 1.");
     if (verbose)    std::cout<<"Nexullance_IT starts optimization for the input demand matrix"<<std::endl; 
@@ -399,7 +409,7 @@ void Nexullance_IT::optimize(int num_step_1, float alpha_step_1, float beta_step
     }
     float step = 0.5;
     for (int i = 0; i < max_num_step_2; i++) {
-        if(step_2(alpha_step_2, beta_step_2, step, step_2_stepping_threshold, step_2_min_attempts, step_2_max_attemtps)){
+        if(step_2(alpha_step_2, beta_step_2, step, step_2_stepping_threshold, step_2_min_attempts, step_2_max_attempts)){
             step *= 0.5;
             continue;
         }else{

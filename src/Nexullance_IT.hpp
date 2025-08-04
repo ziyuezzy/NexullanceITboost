@@ -22,7 +22,7 @@ class Nexullance_IT{
         bool step_2(float _alpha, float _beta, float step, float threshold=0.001, 
                     int min_attempts=50, int max_attempts=100000);
         void optimize(int num_step_1, float alpha_step_1, float beta_step_1, int max_num_step_2, 
-                    float alpha_step_2, float beta_step_2, int step_2_min_attempts, int step_2_stepping_threshold, int step_2_max_attemtps);
+                    float alpha_step_2, float beta_step_2, int step_2_min_attempts, float step_2_stepping_threshold, int step_2_max_attempts);
 
         std::list<float> result_max_loads_step_1;
         // std::list<float> result_max_loads_step_2;

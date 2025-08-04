@@ -109,7 +109,7 @@ IT_outputs diff_Nexullance_IT::optimize_for_M_EPs(float** M_EPs, float _alpha, f
     auto start = std::chrono::high_resolution_clock::now();
     // preparation
     float** M_R;
-    std::pair<float, float> temp_result=procress_M_EPs(const_cast<const float**>(M_EPs), num_vertices, EPR, &M_R);
+    std::pair<float, float> temp_result=process_M_EPs(const_cast<const float**>(M_EPs), num_vertices, EPR, &M_R);
     float max_access_load = temp_result.first/Cap_access;
     float total_flow = temp_result.second;
 
@@ -212,12 +212,15 @@ std::tuple<bool, size_t, float> diff_Nexullance_IT::optimize_for_M_R_fixed_step(
             std::cout<< "step_value= "<< step << ", it="<< attempts << ", max_load = " << result_max_load << ",estimated phi = " 
                 << total_flow/std::max(max_access_load, result_max_load)/(num_vertices*EPR)<< std::endl;   
     
-        if((attempts > min_attempts) && (( std::accumulate(std::prev(max_loads_hist.end(), min_attempts/2), max_loads_hist.end(), 0.0f)/((float)min_attempts) - max_load)<threshold)){
-            if (verbose){
-                std::cout<<"diff nexu:: low progress, terminating for step = "<< step <<std::endl;
-                std::cout<<"diff nexu:: found max link load" << result_max_load <<std::endl;
+        if(attempts > min_attempts){
+            float recent_average_load = std::accumulate(std::prev(max_loads_hist.end(), min_attempts/2), max_loads_hist.end(), 0.0f)/((float)(min_attempts/2));
+            if  ((recent_average_load - max_load)<threshold){
+                if (verbose){
+                    std::cout<<"diff nexu:: low progress, terminating for step = "<< step <<std::endl;
+                    std::cout<<"diff nexu:: found max link load" << result_max_load <<std::endl;
+                }
+                return std::make_tuple(true, attempts, result_max_load);
             }
-            return std::make_tuple(true, attempts, result_max_load);
         }
         bool success_attempt = false;
     

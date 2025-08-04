@@ -3,6 +3,7 @@
 #include <boost/property_map/property_map.hpp>
 #include <boost/property_map/dynamic_property_map.hpp>  // For dynamic_properties in constructing a graph
 #include <boost/graph/depth_first_search.hpp>
+// #include <unordered_set>
 
 #include <queue>
 #include <iostream>
@@ -112,7 +113,7 @@ Graph read_graph_from_arcs(int V, Eigen::MatrixX2i arcs, bool print) {
 
 // }
 
-std::pair<float, float> procress_M_EPs(const float** _M_EPs, const int num_vertices, const int _EPR, float*** out_M_R){
+std::pair<float, float> process_M_EPs(const float** _M_EPs, const int num_vertices, const int _EPR, float*** out_M_R){
 
 
     int num_EPs = num_vertices*_EPR;
@@ -426,9 +427,9 @@ void compute_all_paths_with_max_length_all_s_d(const Graph &g, size_t max_length
                 result_all_paths[*v_iter][u].push_back(current_path); // adding the current path
                 #ifdef DEBUG
                 assert(current_path.size() <= max_length + 1 && "Path exceeds max length");
-                std::cout << "Found path from " << *v_iter << " to " << u << ": ";
-                for (const auto& vertex : current_path) std::cout << vertex << " " ;
-                std::cout << std::endl;
+                // std::cout << "Found path from " << *v_iter << " to " << u << ": ";
+                // for (const auto& vertex : current_path) std::cout << vertex << " " ;
+                // std::cout << std::endl;
                 #endif
                 boost::tie(ei, ei_end) = out_edges(u, g);
             } else {
@@ -456,4 +457,100 @@ void compute_all_paths_with_max_length_all_s_d(const Graph &g, size_t max_length
         }
     }
     #endif
+}
+
+// Filter paths to be edge-disjoint using a greedy approach
+// Returns the filtered paths where no two paths share an edge
+void filter_edge_disjoint_paths(const std::vector<std::vector<std::vector<std::vector<Vertex>>>> &all_paths,
+                               std::vector<std::vector<std::vector<std::vector<Vertex>>>> &filtered_paths,
+                               const Graph &g,
+                               bool verbose) {
+    size_t num_vertices = all_paths.size();
+    
+    // Initialize filtered_paths with the same dimensions
+    filtered_paths.resize(num_vertices);
+    for (size_t src = 0; src < num_vertices; ++src) {
+        filtered_paths[src].resize(num_vertices);
+    }
+    
+    size_t total_original_paths = 0;
+    size_t total_filtered_paths = 0;
+    
+    // Process each source-destination pair
+    for (size_t src = 0; src < num_vertices; ++src) {
+        for (size_t dst = 0; dst < num_vertices; ++dst) {
+            if (src == dst) continue; // Skip self-loops
+            
+            const auto& paths = all_paths[src][dst];
+            size_t original_count = paths.size();
+            total_original_paths += original_count;
+            
+            if (paths.empty()) continue;
+            
+            // Set to keep track of used edges using boost edge descriptors
+            boost::unordered_set<Edge> used_edges;
+            
+            // Greedy selection of edge-disjoint paths
+            for (const auto& path : paths) {
+                bool path_is_disjoint = true;
+                std::vector<Edge> path_edges;
+                
+                // Get all edges in this path and check if any are already used
+                for (size_t i = 0; i < path.size() - 1; ++i) {
+                    Vertex u = path[i];
+                    Vertex v = path[i + 1];
+                    
+                    // Find the edge between u and v
+                    Edge edge;
+                    bool edge_found;
+                    boost::tie(edge, edge_found) = boost::edge(u, v, g);
+                    
+                    if (!edge_found) {
+                        // Try the reverse direction for undirected graphs
+                        boost::tie(edge, edge_found) = boost::edge(v, u, g);
+                    }
+                    
+                    #ifdef DEBUG
+                    assert(edge_found && "Edge not found in graph");
+                    #endif
+                    
+                    if (used_edges.find(edge) != used_edges.end()) {
+                        path_is_disjoint = false;
+                        break;
+                    }
+                    
+                    path_edges.push_back(edge);
+                }
+                
+                // If path is edge-disjoint, add it to filtered paths and mark its edges as used
+                if (path_is_disjoint) {
+                    filtered_paths[src][dst].push_back(path);
+                    
+                    // Mark all edges in this path as used
+                    for (const Edge& edge : path_edges) {
+                        used_edges.insert(edge);
+                    }
+                }
+            }
+            
+            size_t filtered_count = filtered_paths[src][dst].size();
+            total_filtered_paths += filtered_count;
+            
+            // if (verbose && original_count > 0) {
+            //     std::cout << "Source " << src << " to Destination " << dst << ": "
+            //               << original_count << " -> " << filtered_count << " paths ("
+            //               << (original_count - filtered_count) << " filtered out, "
+            //               << (filtered_count * 100.0 / original_count) << "% retained)" << std::endl;
+            // }
+        }
+    }
+    
+    if (verbose) {
+        std::cout << "\n=== Edge-Disjoint Path Filtering Summary ===" << std::endl;
+        std::cout << "Total original paths: " << total_original_paths << std::endl;
+        std::cout << "Total filtered paths: " << total_filtered_paths << std::endl;
+        std::cout << "Paths filtered out: " << (total_original_paths - total_filtered_paths) << std::endl;
+        std::cout << "Retention rate: " << (total_filtered_paths * 100.0 / total_original_paths) << "%" << std::endl;
+        std::cout << "=============================================" << std::endl;
+    }
 }

@@ -35,7 +35,7 @@ MD_Nexullance_IT::MD_Nexullance_IT(Graph& _input_graph, std::vector<float**> _M_
 
     for (size_t i = 0; i < M; i++)
     {
-        std::pair<float, float> temp_result=procress_M_EPs(const_cast<const float**>(_M_EPs_s[i]), num_vertices, EPR, &(M_Rs[i]));
+        std::pair<float, float> temp_result=process_M_EPs(const_cast<const float**>(_M_EPs_s[i]), num_vertices, EPR, &(M_Rs[i]));
         // Calculate the max_access_link_load and total flow for later usage
         total_flows_per_EP[i] = temp_result.second/(num_vertices*EPR);
         max_access_loads[i] = temp_result.first/Cap_access;
