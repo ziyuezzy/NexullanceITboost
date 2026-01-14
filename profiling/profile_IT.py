@@ -2,12 +2,12 @@ import sys
 sys.path.append("/groups/ilabt-imec-be/hpcnetworksimulation/ziyzhang/EFM_experiments/")
 
 import topoResearch.global_helpers as gl
+from topoResearch.topo_paths import REPO_ROOT
 import numpy as np
 import csv
 import argparse
 from topoResearch.nexullance.ultility import nexullance_exp_container
 from diff_nexu.sampled_demand_analyzer import sampled_demand_analyzer
-from paths import REPO_ROOT
 
 Cap_core = 10 #GBps
 Cap_access = 10 #GBps

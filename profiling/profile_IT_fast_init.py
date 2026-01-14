@@ -1,6 +1,7 @@
 import sys
-sys.path.append("/groups/ilabt-imec-be/hpcnetworksimulation/ziyzhang/EFM_experiments/")
+
 from topoResearch.paths import IT_boost_debug, IT_boost_profile
+from topoResearch.topo_paths import REPO_ROOT
 sys.path.append(IT_boost_profile)
 from Nexullance_IT_cpp import Nexullance_IT_fast_interface
 
@@ -10,7 +11,6 @@ import numpy as np
 import networkx as nx
 
 import csv
-from paths import REPO_ROOT
 
 configs = [(36, 5), (49, 6), (64, 7), (81, 8), (100, 9), (121, 10), (144, 11), (169, 12)]
 # configs = [(36, 5), (49, 6)]
