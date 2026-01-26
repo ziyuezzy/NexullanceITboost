@@ -107,13 +107,13 @@ PYBIND11_MODULE(Nexullance_IT_cpp, m) {
 
     py::class_<IT_outputs>(m, "IT_outputs")
         .def("get_elapsed_time", &IT_outputs::get_elapsed_time)
-        .def("get_max_link_load", &IT_outputs::get_max_link_load)
+        .def("get_max_core_link_load", &IT_outputs::get_max_core_link_load)
         .def("get_phi", &IT_outputs::get_phi)
         .def("get_routing_table", &IT_outputs::get_routing_table);
 
     py::class_<MD_IT_outputs>(m, "MD_IT_outputs")
         .def("get_elapsed_time", &MD_IT_outputs::get_elapsed_time)
-        .def("get_max_link_load", &MD_IT_outputs::get_max_link_loads)
+        .def("get_max_core_link_loads", &MD_IT_outputs::get_max_core_link_loads)
         .def("get_phis", &MD_IT_outputs::get_phis)
         .def("get_routing_table", &MD_IT_outputs::get_routing_table)
         .def("get_obj", &MD_IT_outputs::get_obj);

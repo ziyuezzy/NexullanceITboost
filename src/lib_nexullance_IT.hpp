@@ -13,7 +13,7 @@ struct IT_outputs{
     IT_outputs(double _elapsed_time, float _max_link_load, float _phi, result_routing_table _routing_table) : 
             elapsed_time(_elapsed_time), max_link_load(_max_link_load), phi(_phi), routing_table(_routing_table) { }
     double get_elapsed_time() const {return elapsed_time;}
-    float get_max_link_load() const {return max_link_load;}
+    float get_max_core_link_load() const {return max_link_load;}
     float get_phi() const {return phi;}
     result_routing_table get_routing_table() const {return routing_table;}
 
@@ -29,7 +29,7 @@ struct MD_IT_outputs{
     MD_IT_outputs(double _elapsed_time, std::vector<float> _max_link_loads, std::vector<float> _phis, result_routing_table _routing_table, float _Objective_func) : 
             elapsed_time(_elapsed_time), max_link_loads(_max_link_loads), phis(_phis), routing_table(_routing_table), Objective_func(_Objective_func) { }
     double get_elapsed_time() const {return elapsed_time;}
-    std::vector<float> get_max_link_loads() const {return max_link_loads;}
+    std::vector<float> get_max_core_link_loads() const {return max_link_loads;}
     std::vector<float> get_phis() const {return phis;}
     result_routing_table get_routing_table() const {return routing_table;}
     float get_obj() const {return Objective_func;}
