@@ -11,9 +11,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # For release
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -Wall -pedantic -fPIC")
 
-set(Python3_EXECUTABLE /usr/bin/python3.12) #TODO: set up the python3 executable path
-# set(Python3_LIBRARIES /usr/bin/python3.12)
-# set(Python3_INCLUDE_DIRS /usr/bin/python3.12)
+set(Python3_ROOT_DIR /usr/bin/python3.12)
+# set(Python3_EXECUTABLE /usr/bin/python3.12)
+# set(Python3_LIBRARIES /usr/bin/python3.12.so)
+set(Python3_INCLUDE_DIRS /usr/include/python3.12)
 find_package(Python3 3.12 REQUIRED COMPONENTS Interpreter Development) 
 set(pybind11_DIR /users/ziyzhang/.local/lib/python3.12/site-packages/pybind11/share/cmake/pybind11) # TODO: set up the pybind11 path
 find_package(pybind11 REQUIRED)
