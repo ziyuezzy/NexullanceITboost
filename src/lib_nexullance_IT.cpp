@@ -47,7 +47,7 @@ IT_outputs Nexullance_IT_interface::run_IT(Eigen::MatrixXf M_EP, const int EPR){
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
 
-    IT_outputs result = IT_outputs(elapsed.count(), nexu_it.get_max_core_load(), nexu_it.get_phi(), nexu_it.get_routing_table()); //TODO: implemnet
+    IT_outputs result = IT_outputs(elapsed.count(), nexu_it.get_max_core_load(), nexu_it.get_phi(), nexu_it.get_routing_table());
 
     return result;
 }

@@ -29,8 +29,8 @@ class Nexullance_IT{
 
         result_routing_table get_routing_table();
         // float get_average_path_length();
-        float get_phi();
-        float get_max_core_load();
+        float get_phi() const;
+        float get_max_core_load() const;
 
     private:
         Graph G;
@@ -47,16 +47,17 @@ class Nexullance_IT{
         path_id next_path_id;
         std::unordered_map<path_id, std::vector<Vertex>> path_id_to_path; // using vector here, because the shortest-path algorithm return vector<Vertex> as a path
         std::unordered_map<path_id, float>** routing_tables; // a 2D-array of map, first index corresponds to source router id, second index the destination router id.
-        float** link_load;
-        std::vector<path_id>** link_path_ids;
+        boost::unordered_map<Edge, float> link_load;
+        boost::unordered_map<Edge, std::vector<path_id>> link_path_ids;
         // float final_max_load;
         
-        // boost::unordered_map<Edge, float> link_load; // TODO?: probably not necessary to use a map. So in case of bottleneck of std::map operation, we can consider to optimize this?(2D s-d array with sparse values)
-        // boost::unordered_map<Edge, std::vector<path_id>> link_path_ids; // using vector here, because we may need to dynamically remove or append elements.   
-
         std::vector<std::vector<Vertex>>** all_paths_all_s_d;
         property_map< Graph, edge_weight_t >::type weightmap;
 
-
+        // Helper method to extract max link load
+        float compute_max_link_load() const;
+        
+        // Helper method to update edge weight based on load
+        void update_edge_weight(Edge e, float alpha, float beta);
 };
-#endif // GRAPH_DEFINITIONS_HPP
+#endif // NEXULLANCE_IT_HPP
